@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<model name="bcode:barcode" xmlns="http://www.alfresco.org/model/dictionary/1.0">
+
+    <!-- Optional meta-data about the model -->
+    <description>Document Model for Repo Extension Barcode</description>
+    <author>Brian Phelps</author>
+    <version>1.0</version>
+
+    <imports>
+        <!-- Import Alfresco Dictionary Definitions -->
+        <import uri="http://www.alfresco.org/model/dictionary/1.0" prefix="d"/>
+        <!-- Import Alfresco Content Domain Model Definitions -->
+        <import uri="http://www.alfresco.org/model/content/1.0" prefix="cm"/>
+        <!-- Import Alfresco System Model Definitions -->
+        <import uri="http://www.alfresco.org/model/system/1.0" prefix="sys"/>
+    </imports>
+
+    <!-- Custom namespace for your domain -->
+    <namespaces>
+        <namespace uri="http://www.watertown-ny.gov/model/bcode/1.0" prefix="bcode"/>
+    </namespaces>
+	<aspects>
+	
+        <aspect name="bcode:barCoded">
+            <title>Bar Coded</title>
+            <description>Document contains or has been checked for existing bar code</description>
+            <properties>
+                <property name="bcode:barCodeText">
+                    <title>Data contained in found bar code</title>
+                    <type>d:text</type>
+                    <mandatory>false</mandatory>
+                    <multiple>false</multiple>
+                    <index enabled="false"></index>
+                </property>
+            </properties>
+            <associations/>
+            <overrides/>
+            <mandatory-aspects/>
+        </aspect>
+	</aspects>	
+    <!-- ===============================================================================================================
+        Constraints, Types, and Aspects go here...
+        -->
+</model>
