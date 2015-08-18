@@ -3,6 +3,7 @@ package gov.watertown_ny.barcodes.executer;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,8 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 	
 	protected NodeService nodeService;
 	protected ContentService contentService;
+	protected Integer pageNumber;
+	protected com.google.zxing.BarcodeFormat bCodeFormat;
 
 	public BarCodeActionExecuter() {
 		
@@ -60,8 +63,14 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 		nodeService.addAspect(node, barCodeAspect, null);
 		//logger.info(mimeType);
 
-		Map<DecodeHintType, Boolean> decHintMap = new HashMap<DecodeHintType, Boolean>();
+		Map<DecodeHintType, Object> decHintMap = new HashMap<DecodeHintType, Object>();
+		List<com.google.zxing.BarcodeFormat> bCodeTypeList = new ArrayList<com.google.zxing.BarcodeFormat>();
+		//limiting to just 3 of 9 codes
+		// should be parameter
+		bCodeTypeList.add(bCodeFormat);
 		decHintMap.put(DecodeHintType.TRY_HARDER,true);
+		decHintMap.put(DecodeHintType.POSSIBLE_FORMATS,bCodeTypeList);
+		
 		int imageType = BufferedImage.TYPE_INT_RGB;
         int resolution = 300;
         BufferedImage image;
@@ -144,6 +153,18 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 	*/
 	public void setContentService(ContentService contentService) {
 		this.contentService = contentService;
+	}
+	/**
+	* @param pageNumber The PageNumber to set.
+	*/
+	public void setPageNumber(Integer pageNumber) {
+		this.pageNumber = pageNumber;
+	}
+	/**
+	* @param bCodeFormat The bCodeFormat to set.
+	*/
+	public void setPageNumber(com.google.zxing.BarcodeFormat bCodeFormat) {
+		this.bCodeFormat = bCodeFormat;
 	}
 
 }
