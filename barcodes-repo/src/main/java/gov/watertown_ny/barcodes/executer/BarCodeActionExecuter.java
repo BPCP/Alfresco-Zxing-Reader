@@ -1,5 +1,7 @@
 package gov.watertown_ny.barcodes.executer;
 
+import gov.watertown_ny.barcodes.model.bcode;
+
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
@@ -11,9 +13,11 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 
 import org.alfresco.model.ContentModel;
+import org.alfresco.repo.action.ParameterDefinitionImpl;
 import org.alfresco.repo.action.executer.ActionExecuterAbstractBase;
 import org.alfresco.service.cmr.action.Action;
 import org.alfresco.service.cmr.action.ParameterDefinition;
+import org.alfresco.service.cmr.dictionary.DataTypeDefinition;
 import org.alfresco.service.cmr.repository.ContentData;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentService;
@@ -24,6 +28,7 @@ import org.alfresco.service.namespace.QName;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 
+import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
 import com.google.zxing.DecodeHintType;
 import com.google.zxing.MultiFormatReader;
@@ -32,13 +37,11 @@ import com.google.zxing.Result;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.GlobalHistogramBinarizer;
 
-import gov.watertown_ny.barcodes.model.bcode;
-
 public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 	
 	protected NodeService nodeService;
 	protected ContentService contentService;
-	protected Integer pageNumber;
+	public final static String  PARAM_PAGE_NUMBER = "pageNumber";
 	protected com.google.zxing.BarcodeFormat bCodeFormat;
 
 	public BarCodeActionExecuter() {
@@ -47,6 +50,18 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 
 	@Override
 	protected void executeImpl(Action action, NodeRef node) {
+		
+		Integer pageNumber = (Integer)action.getParameterValue(PARAM_PAGE_NUMBER);
+		if (pageNumber == null){
+			pageNumber = 1;
+		}
+		List<com.google.zxing.BarcodeFormat> bCodeTypeList = new ArrayList<com.google.zxing.BarcodeFormat>();
+		String bCodeTypeParam = (String) action.getParameterValue("bCodeType");
+		if (bCodeTypeParam != null) {
+			bCodeTypeList.add(BarcodeFormat.valueOf(bCodeTypeParam));
+		}
+		
+		
 		//final Logger logger = Logger.getLogger(getClass());
 		QName barCodeAspect = QName.createQNameWithValidLocalName(bcode.NAMESPACE_BARCODE_CONTENT_MODEL, bcode.ASPECT_BCODE_BARCODED);
 		QName barCodeTextProp = QName.createQNameWithValidLocalName(bcode.NAMESPACE_BARCODE_CONTENT_MODEL, bcode.PROP_BARCODETEXT);
@@ -64,10 +79,8 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 		//logger.info(mimeType);
 
 		Map<DecodeHintType, Object> decHintMap = new HashMap<DecodeHintType, Object>();
-		List<com.google.zxing.BarcodeFormat> bCodeTypeList = new ArrayList<com.google.zxing.BarcodeFormat>();
-		//limiting to just 3 of 9 codes
-		// should be parameter
-		bCodeTypeList.add(bCodeFormat);
+		
+
 		decHintMap.put(DecodeHintType.TRY_HARDER,true);
 		decHintMap.put(DecodeHintType.POSSIBLE_FORMATS,bCodeTypeList);
 		
@@ -76,7 +89,7 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
         BufferedImage image;
         switch (mimeType){
         case "application/pdf":
-        	image = pdfToBufferedImage(nodeStream, resolution, imageType);
+        	image = pdfToBufferedImage(nodeStream, resolution, imageType, pageNumber);
         	break;
         case "image/png":
         	image = pngToBufferedImage(nodeStream);
@@ -119,12 +132,12 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 		
 		}
 	
-	private BufferedImage pdfToBufferedImage(InputStream nodeStream, int resolution, int imageType){
+	private BufferedImage pdfToBufferedImage(InputStream nodeStream, int resolution, int imageType, int pageNumber){
 		PDDocument document;
 		try {
 			document = PDDocument.load(nodeStream);
 			List<?> pages = document.getDocumentCatalog().getAllPages();
-	        PDPage page = (PDPage) pages.get(0);
+	        PDPage page = (PDPage) pages.get(pageNumber-1);
 	        BufferedImage image = page.convertToImage(imageType, resolution);
 	        document.close();
 	        return image;
@@ -138,8 +151,12 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 		}
 
 	@Override
-	protected void addParameterDefinitions(List<ParameterDefinition> arg0) {
-	
+	protected void addParameterDefinitions(List<ParameterDefinition> paramList) {
+ 
+		paramList.add(
+				new ParameterDefinitionImpl(PARAM_PAGE_NUMBER, DataTypeDefinition.INT, false, "Page Number"));
+		paramList.add(
+				new ParameterDefinitionImpl("bCodeType", DataTypeDefinition.ANY, false, "Bar Code Type",false, "barCodeType-content-properties"));
 
 	}
 	/**
@@ -154,17 +171,6 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 	public void setContentService(ContentService contentService) {
 		this.contentService = contentService;
 	}
-	/**
-	* @param pageNumber The PageNumber to set.
-	*/
-	public void setPageNumber(Integer pageNumber) {
-		this.pageNumber = pageNumber;
-	}
-	/**
-	* @param bCodeFormat The bCodeFormat to set.
-	*/
-	public void setPageNumber(com.google.zxing.BarcodeFormat bCodeFormat) {
-		this.bCodeFormat = bCodeFormat;
-	}
+
 
 }

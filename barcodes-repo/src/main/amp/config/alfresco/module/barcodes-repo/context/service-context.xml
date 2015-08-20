@@ -37,5 +37,7 @@
         </list>
     </property>
 </bean>
-    
+    <bean id="barCodeType-content-properties" class="org.alfresco.repo.action.constraint.EnumParameterConstraint" parent="action-constraint">
+      <property name="enumClassName" value="com.google.zxing.BarcodeFormat" />
+   </bean>   
 </beans>
