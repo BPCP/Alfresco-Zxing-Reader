@@ -21,6 +21,13 @@
     <!-- A simple class that is initialized by Spring -->
 
     <!-- A simple module component that will be executed once -->
+    <bean id="${project.artifactId}_actionResourceBundles" parent="actionResourceBundles">
+    <property name="resourceBundles">
+        <list>
+            <value>alfresco.module.${project.artifactId}.messages.barcodesactions</value>
+        </list>
+    </property>
+</bean>
 
     <bean id="get-barcode" class="gov.watertown_ny.barcodes.executer.BarCodeActionExecuter" parent="action-executer">
     <property name="nodeService">
@@ -30,13 +37,7 @@
         <ref bean="ContentService" />
     </property>
 </bean>
-<bean id="${project.artifactId}_actionResourceBundles" parent="actionResourceBundles">
-    <property name="resourceBundles">
-        <list>
-            <value>alfresco.module.${project.artifactId}.messages.barcodesactions</value>
-        </list>
-    </property>
-</bean>
+
     <bean id="barCodeType-content-properties" class="org.alfresco.repo.action.constraint.EnumParameterConstraint" parent="action-constraint">
       <property name="enumClassName" value="com.google.zxing.BarcodeFormat" />
    </bean>   

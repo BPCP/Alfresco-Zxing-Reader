@@ -27,6 +27,7 @@ import org.alfresco.service.namespace.QName;
 //import org.apache.log4j.Logger;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.springframework.extensions.surf.util.I18NUtil;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
@@ -37,52 +38,58 @@ import com.google.zxing.Result;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
 import com.google.zxing.common.GlobalHistogramBinarizer;
 
+/**
+ * @author Brian Phelps
+ *
+ */
 public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 	
 	protected NodeService nodeService;
 	protected ContentService contentService;
-	public final static String  PARAM_PAGE_NUMBER = "pageNumber";
+	
 	protected com.google.zxing.BarcodeFormat bCodeFormat;
 
 	public BarCodeActionExecuter() {
 		
 	}
 
+	/**
+	 * @see org.alfresco.repo.action.executer.ActionExecuterAbstractBase#executeImpl(org.alfresco.service.cmr.action.Action, org.alfresco.service.cmr.repository.NodeRef)
+	 */
 	@Override
 	protected void executeImpl(Action action, NodeRef node) {
 		
-		Integer pageNumber = (Integer)action.getParameterValue(PARAM_PAGE_NUMBER);
+		Integer pageNumber = (Integer)action.getParameterValue("pageNumber");
 		if (pageNumber == null){
 			pageNumber = 1;
 		}
 		List<com.google.zxing.BarcodeFormat> bCodeTypeList = new ArrayList<com.google.zxing.BarcodeFormat>();
 		String bCodeTypeParam = (String) action.getParameterValue("bCodeType");
-		if (bCodeTypeParam != null) {
-			bCodeTypeList.add(BarcodeFormat.valueOf(bCodeTypeParam));
+		if (bCodeTypeParam != null){
+			if (!bCodeTypeParam.isEmpty()) {
+				bCodeTypeList.add(BarcodeFormat.valueOf(bCodeTypeParam));
+			}
 		}
 		
 		
 		//final Logger logger = Logger.getLogger(getClass());
 		QName barCodeAspect = QName.createQNameWithValidLocalName(bcode.NAMESPACE_BARCODE_CONTENT_MODEL, bcode.ASPECT_BCODE_BARCODED);
 		QName barCodeTextProp = QName.createQNameWithValidLocalName(bcode.NAMESPACE_BARCODE_CONTENT_MODEL, bcode.PROP_BARCODETEXT);
-		//Map<QName, Serializable> properties = nodeService.getProperties(node);
-		
-		//logger.info(barCodeAspect.getPrefixString());
-		//logger.info(barCodeAspect.getNamespaceURI());
-		//logger.info(properties.toString());
+
+		//logger.info(I18NUtil.getMessage("get-barcode.title"));
 	
 		ContentReader reader = contentService.getReader(node, ContentModel.PROP_CONTENT);
 	    InputStream nodeStream = reader.getContentInputStream();
 	    ContentData contentData = (ContentData) nodeService.getProperty(node, ContentModel.PROP_CONTENT);
 	    String mimeType = contentData.getMimetype();
 		nodeService.addAspect(node, barCodeAspect, null);
-		//logger.info(mimeType);
+		
 
 		Map<DecodeHintType, Object> decHintMap = new HashMap<DecodeHintType, Object>();
 		
 
 		decHintMap.put(DecodeHintType.TRY_HARDER,true);
-		decHintMap.put(DecodeHintType.POSSIBLE_FORMATS,bCodeTypeList);
+		if (bCodeTypeList.size()>0)	decHintMap.put(DecodeHintType.POSSIBLE_FORMATS,bCodeTypeList);
 		
 		int imageType = BufferedImage.TYPE_INT_RGB;
         int resolution = 300;
@@ -106,12 +113,12 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 				nodeService.setProperty(node, barCodeTextProp, qrCodeResult.getText());
 			} catch (NotFoundException e) {
 				
-				nodeService.setProperty(node, barCodeTextProp, "No Barcode Found");
+				nodeService.setProperty(node, barCodeTextProp, I18NUtil.getMessage("get-barcode.noneFound"));
 			}
 		}
 		else
 			{
-				nodeService.setProperty(node, barCodeTextProp, "Barcode reading is not configured for document type : "+mimeType);
+				nodeService.setProperty(node, barCodeTextProp, I18NUtil.getMessage("get-barcode.wrongMimeType")+" "+mimeType);
 			}
 		
 		
@@ -150,13 +157,17 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 
 		}
 
+	/**
+	 * @see org.alfresco.repo.action.ParameterizedItemAbstractBase#addParameterDefinitions(java.util.List)
+	 */
 	@Override
 	protected void addParameterDefinitions(List<ParameterDefinition> paramList) {
- 
+
+		
+		paramList.add(																
+				new ParameterDefinitionImpl("pageNumber", DataTypeDefinition.INT, false,getParamDisplayLabel("pageNumber")));
 		paramList.add(
-				new ParameterDefinitionImpl(PARAM_PAGE_NUMBER, DataTypeDefinition.INT, false, "Page Number"));
-		paramList.add(
-				new ParameterDefinitionImpl("bCodeType", DataTypeDefinition.ANY, false, "Bar Code Type",false, "barCodeType-content-properties"));
+				new ParameterDefinitionImpl("bCodeType", DataTypeDefinition.ANY, false,getParamDisplayLabel("bCodeType"),false, "barCodeType-content-properties"));
 
 	}
 	/**
