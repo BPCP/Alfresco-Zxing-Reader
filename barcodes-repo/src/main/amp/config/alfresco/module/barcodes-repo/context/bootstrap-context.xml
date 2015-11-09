@@ -9,12 +9,13 @@
 
 
     <!-- Registration of new models -->
-    <bean id="gov.watertown_ny.dictionaryBootstrap" parent="dictionaryModelBootstrap" depends-on="dictionaryBootstrap">
+    <bean id="gov.watertown_ny.barcodes.dictionaryBootstrap" parent="dictionaryModelBootstrap" depends-on="dictionaryBootstrap">
         <property name="models">
             <list>
                 <value>alfresco/module/${project.artifactId}/model/content-model.xml</value>
             </list>
         </property>
+        
     </bean>
 	
 
