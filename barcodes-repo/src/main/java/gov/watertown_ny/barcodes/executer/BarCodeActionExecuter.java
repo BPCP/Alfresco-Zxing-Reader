@@ -31,21 +31,12 @@ import org.springframework.extensions.surf.util.I18NUtil;
 
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.BinaryBitmap;
-import com.google.zxing.ChecksumException;
 import com.google.zxing.DecodeHintType;
-import com.google.zxing.FormatException;
 import com.google.zxing.MultiFormatReader;
 import com.google.zxing.NotFoundException;
 import com.google.zxing.Result;
-import com.google.zxing.ResultPoint;
 import com.google.zxing.client.j2se.BufferedImageLuminanceSource;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.common.DecoderResult;
-import com.google.zxing.common.DetectorResult;
 import com.google.zxing.common.GlobalHistogramBinarizer;
-import com.google.zxing.common.HybridBinarizer;
-import com.google.zxing.multi.qrcode.detector.MultiDetector;
-import com.google.zxing.qrcode.decoder.Decoder;
 
 /**
  * @author Brian Phelps
@@ -67,7 +58,7 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 	 */
 	@Override
 	protected void executeImpl(Action action, NodeRef node) {
-		long t = System.currentTimeMillis();
+		
 		Integer pageNumber = (Integer)action.getParameterValue("pageNumber");
 		if (pageNumber == null){
 			pageNumber = 1;
@@ -94,11 +85,11 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
 		nodeService.addAspect(node, barCodeAspect, null);
 		
 
-		Map<DecodeHintType, Object> hints = new HashMap<DecodeHintType, Object>();
+		Map<DecodeHintType, Object> decHintMap = new HashMap<DecodeHintType, Object>();
 		
 
-		hints.put(DecodeHintType.TRY_HARDER,true);
-		if (bCodeTypeList.size()>0)	hints.put(DecodeHintType.POSSIBLE_FORMATS,bCodeTypeList);
+		decHintMap.put(DecodeHintType.TRY_HARDER,true);
+		if (bCodeTypeList.size()>0)	decHintMap.put(DecodeHintType.POSSIBLE_FORMATS,bCodeTypeList);
 		
 		int imageType = BufferedImage.TYPE_INT_RGB;
         int resolution = 300;
@@ -115,46 +106,14 @@ public class BarCodeActionExecuter extends ActionExecuterAbstractBase {
         }
 		if (image!=null)
 		{
-			BufferedImageLuminanceSource source = new BufferedImageLuminanceSource(image);
-			HybridBinarizer binarizer = new HybridBinarizer(source);
-			//GlobalHistogramBinarizer binarizer = new GlobalHistogramBinarizer(source);
-			BinaryBitmap bitmap = new BinaryBitmap(binarizer);
-			try {BitMatrix matrix = bitmap.getBlackMatrix();
-				MultiDetector detector = new MultiDetector(matrix);
-				DetectorResult[] results = detector.detectMulti(hints);
-				System.out.println(node.toString());
-				System.out.println("Results in " + (System.currentTimeMillis()-t) + " msec");
-				Decoder qrDecoder = new Decoder();
-			
-			
-				for (DetectorResult result : results)
-				{	
-				
-					System.out.println("Result:");
-	            
-					System.out.println(result.getBits().toString());
-					// DecoderResult qrResult = qrDecoder.decode(result.getBits());
-					System.out.println(qrDecoder.decode(result.getBits()).getText());
-					for (ResultPoint point : result.getPoints())
-						{
-						System.out.println("  Point " + point.getX() + "," + point.getY());
-						}
-				}
-
-			} catch (ChecksumException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (FormatException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}  catch (NotFoundException e) {
-				nodeService.setProperty(node, barCodeTextProp, "nothing yet with hybrid");
-				}
-			try{	System.out.println("does it get here?");
-				Result qrCodeResult = new MultiFormatReader().decode(bitmap,hints);
+			BufferedImageLuminanceSource bils = new BufferedImageLuminanceSource(image);
+			BinaryBitmap binaryBitmap = new BinaryBitmap(new GlobalHistogramBinarizer(bils));
+			try {
+				Result qrCodeResult = new MultiFormatReader().decode(binaryBitmap,decHintMap);
 				nodeService.setProperty(node, barCodeTextProp, qrCodeResult.getText());
 			} catch (NotFoundException e) {
-			nodeService.setProperty(node, barCodeTextProp, "nothing yet with hybrid");
+				
+				nodeService.setProperty(node, barCodeTextProp, I18NUtil.getMessage("get-barcode.noneFound"));
 			}
 		}
 		else
